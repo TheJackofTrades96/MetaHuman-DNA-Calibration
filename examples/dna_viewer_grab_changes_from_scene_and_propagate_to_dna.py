@@ -6,7 +6,7 @@ Follow the steps:
 
 1. Start Maya
 2. open maya scene (do 2.1 or 2.2)
-2.1. Open existing maya scene generated from dna or
+2.1. Generate new scene using build_meshes or
 2.2. start DNA Viewer GUI (dna_viewer_run_in_maya.py)
     - Select DNA file that you want to load and generate scene for
     - Select meshes that you want to change
@@ -49,7 +49,7 @@ from os import path as ospath
 
 CHARACTER_NAME = "Ada"
 
-# if you use Maya, use absolute path
+# If you use Maya, use absolute path
 ROOT_DIR = f"{ospath.dirname(ospath.abspath(__file__))}/..".replace("\\", "/")
 OUTPUT_DIR = f"{ROOT_DIR}/output"
 ROOT_LIB_DIR = f"{ROOT_DIR}/lib"
@@ -79,7 +79,7 @@ from dnacalib import (
     VectorOperation_Add,
 )
 
-from dna_viewer import DNA, RigConfig, build_rig
+from dna_viewer import DNA, RigConfig, build_rig, build_meshes
 
 
 def load_dna_reader(path):
@@ -142,9 +142,9 @@ def run_joints_command(reader, calibrated):
         rotation = cmds.joint(joint_name, query=True, orientation=True)
         joint_rotations.append(rotation)
 
-    # this is step 5 sub-step a
+    # This is step 5 sub-step a
     set_new_joints_translations = SetNeutralJointTranslationsCommand(joint_translations)
-    # this is step 5 sub-step b
+    # This is step 5 sub-step b
     set_new_joints_rotations = SetNeutralJointRotationsCommand(joint_rotations)
 
     # Abstraction to collect all commands into a sequence, and run them with only one invocation
@@ -154,7 +154,7 @@ def run_joints_command(reader, calibrated):
     commands.add(set_new_joints_rotations)
 
     commands.run(calibrated)
-    # verify that everything went fine
+    # Verify that everything went fine
     if not Status.isOk():
         status = Status.get()
         raise RuntimeError(f"Error run_joints_command: {status.message}")
@@ -163,7 +163,7 @@ def run_joints_command(reader, calibrated):
 def run_vertices_command(
     calibrated, old_vertices_positions, new_vertices_positions, mesh_index
 ):
-    # making deltas between old vertices positions and new one
+    # Making deltas between old vertices positions and new one
     deltas = []
     for new_vertex, old_vertex in zip(new_vertices_positions, old_vertices_positions):
         delta = []
@@ -171,7 +171,7 @@ def run_vertices_command(
             delta.append(new - old)
         deltas.append(delta)
 
-    # this is step 5 sub-step c
+    # This is step 5 sub-step c
     new_neutral_mesh = SetVertexPositionsCommand(
         mesh_index, deltas, VectorOperation_Add
     )
@@ -180,7 +180,7 @@ def run_vertices_command(
     commands.add(new_neutral_mesh)
     commands.run(calibrated)
 
-    # verify that everything went fine
+    # Verify that everything went fine
     if not Status.isOk():
         status = Status.get()
         raise RuntimeError(f"Error run_vertices_command: {status.message}")
@@ -202,14 +202,20 @@ def assemble_maya_scene():
 makedirs(OUTPUT_DIR, exist_ok=True)
 
 dna = DNA(CHARACTER_DNA)
-config = RigConfig(
-    gui_path=f"{DATA_DIR}/gui.ma",
-    analog_gui_path=f"{DATA_DIR}/analog_gui.ma",
-    aas_path=ADDITIONAL_ASSEMBLE_SCRIPT,
-)
-build_rig(dna=dna, config=config)
+##################################
+# This is step 2 sub-step 1
+# use this block only if you need to assemble of scene from step 2.1
+# config = RigConfig(
+#     gui_path=f"{DATA_DIR}/gui.ma",
+#     analog_gui_path=f"{DATA_DIR}/analog_gui.ma",
+#     aas_path=ADDITIONAL_ASSEMBLE_SCRIPT,
+# )
+# build_meshes(dna=dna, config=config)
+# This is end of step 2 sub-step 1
+##################################
 
-# this is step 3 sub-step a
+
+# This is step 3 sub-step a
 current_vertices_positions = {}
 mesh_indices = []
 for mesh_index, name in enumerate(dna.meshes.names):
@@ -217,15 +223,15 @@ for mesh_index, name in enumerate(dna.meshes.names):
         "mesh_index": mesh_index,
         "positions": get_mesh_vertex_positions_from_scene(name),
     }
-# loaded data - end of 3rd step
+# Loaded data - end of 3rd step
 ##################################
 
 ##################################
-# modify rig in maya, 4th step
+# Modify rig in maya, 4th step
 ##################################
 
 ##################################
-# propagate changes to dna, 5th step
+# Propagate changes to dna, 5th step
 reader = load_dna_reader(CHARACTER_DNA)
 calibrated = DNACalibDNAReader(reader)
 
